@@ -1,0 +1,5 @@
+.env
+node_modules/
+vraag_log_v2.csv
+.DS_Store
+*.log

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoloMoves AI Assistant | Mixed Reality Support</title>
+    <meta name="description" content="Krijg antwoord op al uw vragen over HoloMoves Mixed Reality software en exergames. Onze slimme assistent staat voor u klaar.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="blob-bg"></div>
+
+    <!-- Holly Launcher -->
+    <div id="chat-launcher" class="holly-launcher" aria-label="Open chat met Holly">
+        <img src="holly_avatar.png" alt="Holly" class="launcher-avatar">
+        <div id="launcher-bubble" class="launcher-bubble hidden"></div>
+        <div class="launcher-tooltip">Vraag het Holly! 👋</div>
+    </div>
+
+    <main id="chat-window" class="app-container hidden">
+        <header class="chat-header">
+            <div class="logo-section">
+                <div class="main-logo">
+                    <img src="holomoves_logo.png" alt="HoloMoves Logo" class="company-logo">
+                </div>
+                <div class="brand">
+                    <h1>Holly</h1>
+                    <span>AI Assistant</span>
+                </div>
+            </div>
+            <div class="header-controls">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    Online
+                </div>
+                <button type="button" id="close-chat" class="close-btn-header" aria-label="Sluit chat">
+                    &times;
+                </button>
+            </div>
+        </header>
+
+        <section id="chat-messages" class="chat-viewport">
+            <div class="message bot-message welcome">
+                <div class="bot-msg-wrapper">
+                    <div class="mini-avatar bot-avatar-replied">
+                        <img src="holly_avatar.png" alt="Holly">
+                    </div>
+                    <div class="content">
+                        <p>Hoi! Ik ben Holly van HoloMoves. 👋 Waar mag ik je vandaag mee ondersteunen?</p>
+                        <p>Of je nu vragen hebt over de software of direct wilt beginnen met bewegen: ik sta voor je klaar!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="suggestion-container" class="suggestion-container hidden">
+            <!-- Dynamisch gevuld door JS -->
+        </div>
+
+        <section class="chat-input-area">
+            <form id="chat-form">
+                <div class="input-wrapper">
+                    <input type="text" id="user-input" autocomplete="off" placeholder="Stel hier uw vraag..." aria-label="Bericht">
+                    <button type="submit" id="send-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            <p class="disclaimer">Deze AI-assistent is ontworpen voor algemene informatie over HoloMoves.</p>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
