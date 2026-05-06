@@ -417,9 +417,21 @@ const bubbleText = "Chat met Holly! 👋";
 function typeWriter(text, i, fnCallback) {
     if (i < text.length) {
         chatBubble.innerHTML = text.substring(0, i + 1) + '<span aria-hidden="true" class="cursor"></span>';
-        setTimeout(() => typeWriter(text, i + 1, fnCallback), 100);
+        
+        // Menselijke vertraging: random tussen 100 en 250ms voor een rustiger tempo
+        let delay = Math.random() * (250 - 100) + 100;
+        
+        // Extra pauze bij leestekens voor een natuurlijke flow
+        const char = text.charAt(i);
+        if (char === '!' || char === '.' || char === '?' || char === ',') {
+            delay += 500;
+        }
+
+        setTimeout(() => typeWriter(text, i + 1, fnCallback), delay);
     } else if (typeof fnCallback == 'function') {
-        setTimeout(fnCallback, 3000);
+        // Zorg dat de cursor blijft staan terwijl de bubble zichtbaar is
+        chatBubble.innerHTML = text + '<span aria-hidden="true" class="cursor"></span>';
+        setTimeout(fnCallback, 4000); // Iets langer zichtbaar blijven
     }
 }
 
@@ -433,7 +445,6 @@ function showBubblePrompt() {
 }
 
 setTimeout(showBubblePrompt, 2000);
-setInterval(showBubblePrompt, 100000);
 
 chatLauncher.addEventListener('click', () => {
     chatWindow.classList.remove('hidden');

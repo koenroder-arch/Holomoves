@@ -8,12 +8,20 @@ const LOG_FILE = 'vraag_log_v2.csv';
 const ENV_FILE = '.env';
 
 // Simpele .env parser
-let config = {};
+let config = {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY
+};
+
 if (fs.existsSync(ENV_FILE)) {
     const envContent = fs.readFileSync(ENV_FILE, 'utf-8');
     envContent.split('\n').forEach(line => {
         const [key, value] = line.split('=');
-        if (key && value) config[key.trim()] = value.trim();
+        if (key && value) {
+            const k = key.trim();
+            const v = value.trim();
+            // Geef process.env voorrang als het al gezet is
+            if (!config[k]) config[k] = v;
+        }
     });
 }
 

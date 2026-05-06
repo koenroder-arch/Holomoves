@@ -101,11 +101,9 @@ body {
     justify-content: center;
     align-items: center;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    animation: bounce 4s infinite ease-in-out;
 }
 
 .holly-launcher:hover {
-    transform: scale(1.1) rotate(-5deg);
     box-shadow: 0 20px 50px rgba(0, 180, 216, 0.7), 0 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
@@ -301,6 +299,21 @@ body {
 @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
+}
+
+.cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background-color: var(--bg-dark);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: cursor-blink 0.8s infinite;
+}
+
+@keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 /* Chat Viewport */
