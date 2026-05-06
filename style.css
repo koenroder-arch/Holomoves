@@ -594,6 +594,52 @@ button#send-btn:active {
     40% { transform: scale(1.2); opacity: 1; }
 }
 
+.chat-link {
+    color: var(--secondary);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.chat-link:hover {
+    border-bottom-color: var(--secondary);
+    opacity: 0.9;
+}
+
+.message-file {
+    margin-top: 10px;
+}
+
+.file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: white;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.file-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    border-color: var(--secondary);
+}
+
+.file-icon {
+    font-size: 1.2rem;
+}
+
+.file-name {
+    font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
     .app-container {

@@ -7,11 +7,15 @@ const userInput = document.getElementById('user-input');
 
 // 1. Chatbot Config & State
 let faqData = [];
+let bigDataFAQ = [];
+let gamesData = [];
 let configData = [];
 let chatHistory = [];
 let userQuestionCount = 0; // Telt het aantal gestelde vragen
 let systemPromptTemplate = ""; // Wordt geladen uit bestand
 const CSV_FILE_PATH = "Vragen en antwoorden ChatBot CSV.csv";
+const BIG_DATA_FILE_PATH = "Big data vragen.csv";
+const GAMES_FILE_PATH = "Spelvragen.csv";
 const CONFIG_FILE_PATH = "Chatbot_Configuratie_HoloMoves.csv";
 const PROMPT_FILE_PATH = "system_prompt.txt";
 const SUGGESTIONS = [
@@ -34,45 +38,75 @@ const FOLLOW_UP_MESSAGES = [
 // 2. Functie om CSV te laden en te parsen
 async function loadFAQData() {
     try {
-        // Laad FAQ CSV
-        const csvResponse = await fetch(CSV_FILE_PATH);
-        const csvText = await csvResponse.text();
-        
-        // Laad Configuratie CSV
-        const configResponse = await fetch(CONFIG_FILE_PATH);
-        const configText = await configResponse.text();
+        // Laad alle CSV's en bestanden
+        const [faqRes, bigDataRes, gamesRes, configRes, promptRes] = await Promise.all([
+            fetch(CSV_FILE_PATH),
+            fetch(BIG_DATA_FILE_PATH),
+            fetch(GAMES_FILE_PATH),
+            fetch(CONFIG_FILE_PATH),
+            fetch(PROMPT_FILE_PATH)
+        ]);
 
-        // Laad Systeem Prompt
-        const promptResponse = await fetch(PROMPT_FILE_PATH);
-        systemPromptTemplate = await promptResponse.text();
+        const [faqText, bigDataText, gamesText, configText, promptText] = await Promise.all([
+            faqRes.text(),
+            bigDataRes.text(),
+            gamesRes.text(),
+            configRes.text(),
+            promptRes.text()
+        ]);
+
+        systemPromptTemplate = promptText;
         
-        // FAQ Parser
-        const lines = csvText.split('\n').filter(line => line.trim() !== '');
-        const headers = lines[0].split(';').map(h => h.trim());
-        
-        faqData = lines.slice(1).map(line => {
+        // 1. Standaard FAQ Parser
+        const faqLines = faqText.split('\n').filter(line => line.trim() !== '');
+        const faqHeaders = faqLines[0].split(';').map(h => h.trim());
+        faqData = faqLines.slice(1).map(line => {
             const values = line.split(';').map(v => v.trim());
             const entry = {};
-            headers.forEach((header, i) => {
-                if (values[i]) entry[header] = values[i];
-            });
+            faqHeaders.forEach((header, i) => { if (values[i]) entry[header] = values[i]; });
             return entry;
         }).filter(entry => entry.Vraag && entry.Antwoord);
-        
-        // Config Parser
+
+        // 2. Big Data FAQ Parser (met multiline support voor bijlages)
+        const bigDataLines = bigDataText.split('\n').filter(line => line.trim() !== '');
+        let lastEntry = null;
+        bigDataFAQ = [];
+        bigDataLines.slice(1).forEach(line => {
+            const values = line.split(';').map(v => v.trim());
+            if (values[0]) {
+                lastEntry = { Vraag: values[0], Antwoord: values[1] };
+                bigDataFAQ.push(lastEntry);
+            } else if (lastEntry && values[1]) {
+                // Als de eerste kolom leeg is, hoort de informatie bij de vorige vraag
+                if (values[1].match(/\.(mp4|pdf|pptx|docx|jpg|png)$/i)) {
+                    lastEntry.Bestand = values[1];
+                } else {
+                    lastEntry.Antwoord += " " + values[1];
+                }
+            }
+        });
+
+        // 3. Spelvragen Parser
+        const gamesLines = gamesText.split('\n').filter(line => line.trim() !== '');
+        const gamesHeaders = gamesLines[0].split(';').map(h => h.trim());
+        gamesData = gamesLines.slice(1).map(line => {
+            const values = line.split(';').map(v => v.trim());
+            const entry = {};
+            gamesHeaders.forEach((header, i) => { if (values[i]) entry[header] = values[i]; });
+            return entry;
+        }).filter(entry => entry.Spel);
+
+        // 4. Config Parser
         const configLines = configText.split('\n').filter(line => line.trim() !== '');
         const configHeaders = configLines[0].split(';').map(h => h.trim());
-        
         configData = configLines.slice(1).map(line => {
             const values = line.split(';').map(v => v.trim());
             const entry = {};
-            configHeaders.forEach((header, i) => {
-                if (values[i]) entry[header] = values[i];
-            });
+            configHeaders.forEach((header, i) => { if (values[i]) entry[header] = values[i]; });
             return entry;
         }).filter(entry => entry.Type && entry.Onderwerp);
 
-        console.log("Data geladen:", faqData.length, "FAQ items,", configData.length, "Config items en systeem prompt.");
+        console.log("Data geladen:", faqData.length, "FAQ,", bigDataFAQ.length, "BigData,", gamesData.length, "Games,", configData.length, "Config.");
     } catch (error) {
         console.error("Fout bij laden data:", error);
     }
@@ -81,16 +115,17 @@ async function loadFAQData() {
 // 3. Functie voor lokale matching (Level 1 van de RAG-workflow)
 function findLocalMatch(userQuery) {
     const query = userQuery.toLowerCase().trim();
-    
-    // We zoeken naar een match die minstens 80% van de woorden bevat
     const queryWords = query.split(/\s+/).filter(w => w.length > 3);
     
-    for (const item of faqData) {
+    // Doorzoek beide FAQ bronnen
+    const allFAQ = [...faqData, ...bigDataFAQ];
+    
+    for (const item of allFAQ) {
         const question = item.Vraag.toLowerCase();
         
         // 1. Exacte match of bevat de hele vraag
         if (question.includes(query) || query.includes(question)) {
-            return item.Antwoord;
+            return { antwoord: item.Antwoord, bestand: item.Bestand };
         }
         
         // 2. Keyword overlap
@@ -99,7 +134,7 @@ function findLocalMatch(userQuery) {
             const matchRatio = matchCount / queryWords.length;
             
             if (matchRatio >= 0.8) { 
-                return item.Antwoord;
+                return { antwoord: item.Antwoord, bestand: item.Bestand };
             }
         }
     }
@@ -199,21 +234,34 @@ ${videoInstruction}
     `.trim();
 
     const knowledgeSource = faqData.map(item => `Vraag: ${item.Vraag}\nAntwoord: ${item.Antwoord}`).join('\n\n');
+    const bigDataKnowledge = bigDataFAQ.map(item => `Vraag: ${item.Vraag}\nAntwoord: ${item.Antwoord} ${item.Bestand ? `[Bestand: ${item.Bestand}]` : ""}`).join('\n\n');
+    const gamesKnowledge = gamesData.map(item => `Spel: ${item.Spel}\nDoelen: ${item.Therapiedoelen}\nSpeldoel: ${item.Speldoel}\nHoe spelen: ${item['Hoe te spelen']}\nSpeelveld: ${item.Speelveld}`).join('\n\n');
+
+    const fullKnowledge = `
+[FAQ DATA]
+${knowledgeSource}
+
+[EXTRA DATA]
+${bigDataKnowledge}
+
+[SPEL INFORMATIE]
+${gamesKnowledge}
+    `.trim();
 
     // Gebruik de externe template en vervang placeholders
     let finalPrompt = systemPromptTemplate
         .replace("{{CATEGORY_INSTRUCTION}}", combinedInstructions)
-        .replace("{{KNOWLEDGE_SOURCE}}", knowledgeSource);
+        .replace("{{KNOWLEDGE_SOURCE}}", fullKnowledge);
 
     return finalPrompt;
 }
 
-function appendMessage(role, text, imagePath = null, videoPath = null) {
+function appendMessage(role, text, imagePath = null, videoPath = null, filePath = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}-message`;
     const hollyAvatarPath = "holly_avatar.png";
     
-    // Maak links klikbaar
+    // Maak links klikbaar (detecteert ook .pdf, .docx etc als ze als URL verschijnen)
     let formattedText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="chat-link">$1</a>');
     // Vervang regeleindes
     formattedText = formattedText.replace(/\n/g, '<br>');
@@ -233,6 +281,18 @@ function appendMessage(role, text, imagePath = null, videoPath = null) {
                     <source src="${videoPath}" type="video/mp4">
                     Je browser ondersteunt geen HTML5 video.
                 </video>
+            </div>
+        `;
+    }
+    if (filePath) {
+        const isPdf = filePath.toLowerCase().endsWith('.pdf');
+        const icon = isPdf ? '📄' : '📎';
+        mediaHtml += `
+            <div class="message-file">
+                <a href="${filePath}" target="_blank" class="file-link">
+                    <span class="file-icon">${icon}</span>
+                    <span class="file-name">${filePath}</span>
+                </a>
             </div>
         `;
     }
@@ -315,20 +375,29 @@ async function getChatbotResponse(userText, retryCount = 0) {
     // STAP 1: Lokale match in CSV
     const localMatch = findLocalMatch(userText);
     if (localMatch) {
-        let videoFile = null;
-        let responseText = localMatch;
-        // Check of er direct een mp4 in de string zit
-        const mp4Match = localMatch.match(/([a-zA-Z0-9_\-\(\) ]+\.mp4)/i);
-        if (mp4Match) {
-            videoFile = mp4Match[0];
-            if (localMatch.trim() === videoFile) {
-                responseText = "Hier is de instructievideo:";
+        let videoFile = localMatch.bestand && localMatch.bestand.toLowerCase().endsWith('.mp4') ? localMatch.bestand : null;
+        let otherFile = localMatch.bestand && !videoFile ? localMatch.bestand : null;
+        let responseText = localMatch.antwoord;
+
+        // Als er een bestand of link bij zit, voeg dan de door de gebruiker gewenste intro toe (Level 1)
+        if (videoFile || otherFile || responseText.includes('http')) {
+            responseText = `U vroeg: "${userText}". Ik help u daar graag bij!\n\nHier is de oplossing:\n${localMatch.antwoord}`;
+        }
+
+        // Check of er direct een mp4 in de string zit (fallback)
+        if (!videoFile) {
+            const mp4Match = localMatch.antwoord.match(/([a-zA-Z0-9_\-\(\) ]+\.mp4)/i);
+            if (mp4Match) {
+                videoFile = mp4Match[0];
+                if (localMatch.antwoord.trim() === videoFile) {
+                    responseText = "Hier is de instructievideo:";
+                }
             }
         }
         
         setTimeout(() => {
             removeTyping();
-            appendMessage('bot', responseText, isAreaQuery ? areaImagePath : null, videoFile);
+            appendMessage('bot', responseText, isAreaQuery ? areaImagePath : null, videoFile, otherFile);
             chatHistory.push({ role: 'user', text: userText });
             chatHistory.push({ role: 'bot', text: responseText });
             sendFollowUp();
@@ -369,12 +438,20 @@ async function getChatbotResponse(userText, retryCount = 0) {
         const isResponseAboutArea = botResponse.toLowerCase().includes("oppervlakte") || isAreaQuery;
         
         let videoFile = null;
+        let otherFile = null;
+        
         const mp4Match = botResponse.match(/([a-zA-Z0-9_\-\(\) ]+\.mp4)/i);
         if (mp4Match) {
             videoFile = mp4Match[0];
+        } else {
+            // Check voor andere bestanden (.pdf, .pptx, etc)
+            const fileMatch = botResponse.match(/([a-zA-Z0-9_\-\(\) ]+\.(pdf|pptx|docx|jpg|png))/i);
+            if (fileMatch) {
+                otherFile = fileMatch[0];
+            }
         }
         
-        appendMessage('bot', botResponse, isResponseAboutArea ? areaImagePath : null, videoFile);
+        appendMessage('bot', botResponse, isResponseAboutArea ? areaImagePath : null, videoFile, otherFile);
         
         chatHistory.push({ role: 'user', text: userText });
         chatHistory.push({ role: 'bot', text: botResponse });
