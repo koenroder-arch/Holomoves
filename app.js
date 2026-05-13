@@ -387,8 +387,10 @@ async function getChatbotResponse(userText, retryCount = 0) {
                         userText.toLowerCase().includes("afmeting");
     const areaImagePath = "Screenshot 2026-04-22 124526.jpg";
 
-    // STAP 1: Lokale match in CSV
-    const localMatch = findLocalMatch(userText);
+    // STAP 1: Lokale match in CSV (Sla over als de vraag al eerder gesteld is om AI-nuance te geven)
+    const isRepeatedQuery = chatHistory.some(h => h.role === 'user' && h.text.toLowerCase().trim() === userText.toLowerCase().trim());
+    const localMatch = isRepeatedQuery ? null : findLocalMatch(userText);
+    
     if (localMatch) {
         let videoFile = localMatch.bestand && localMatch.bestand.toLowerCase().endsWith('.mp4') ? localMatch.bestand : null;
         let otherFile = localMatch.bestand && !videoFile ? localMatch.bestand : null;
