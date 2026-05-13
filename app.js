@@ -12,6 +12,7 @@ let gamesData = [];
 let configData = [];
 let chatHistory = [];
 let userQuestionCount = 0; // Telt het aantal gestelde vragen
+let themeHistory = []; // Houdt de thema-historie bij voor escalatie-logica
 let systemPromptTemplate = ""; // Wordt geladen uit bestand
 const CSV_FILE_PATH = "Vragen en antwoorden ChatBot CSV.csv";
 const BIG_DATA_FILE_PATH = "Big data vragen.csv";
@@ -195,7 +196,20 @@ function getDynamicSystemPrompt(userQuery) {
     let contactInfo = "";
     
     const qLower = userQuery.toLowerCase();
-    const isEscalationAllowed = chatHistory.length >= 4; // Toegestaan vanaf de 3e vraag van de gebruiker
+    const currentTheme = determineTheme(userQuery);
+    
+    // 1. Directe vraag om contact?
+    const asksDirectlyForContact = qLower.includes("contact") || 
+                                   qLower.includes("telefoon") || 
+                                   qLower.includes("bellen") || 
+                                   qLower.includes("mail") || 
+                                   qLower.includes("spreken") || 
+                                   qLower.includes("hulp nodig van een mens");
+
+    // 2. Thema-herhaling check (3x hetzelfde thema?)
+    const themeOccurrences = themeHistory.filter(t => t === currentTheme && t !== "Algemeen/Overig").length;
+    
+    const isEscalationAllowed = asksDirectlyForContact || themeOccurrences >= 3;
     
     // Verwerk ConfigData voor dynamische instructies
     for (const config of configData) {
@@ -364,6 +378,7 @@ async function getChatbotResponse(userText, retryCount = 0) {
     // Bepaal thema voor de log
     if (retryCount === 0) {
         const thema = determineTheme(userText);
+        themeHistory.push(thema);
         logQuestion(userText, thema);
     }
 
@@ -379,9 +394,9 @@ async function getChatbotResponse(userText, retryCount = 0) {
         let otherFile = localMatch.bestand && !videoFile ? localMatch.bestand : null;
         let responseText = localMatch.antwoord;
 
-        // Als er een bestand of link bij zit, voeg dan de door de gebruiker gewenste intro toe (Level 1)
+        // Voeg een introductie toe voor de lokale match (Level 1)
         if (videoFile || otherFile || responseText.includes('http')) {
-            responseText = `U vroeg: "${userText}". Ik help u daar graag bij!\n\nHier is de oplossing:\n${localMatch.antwoord}`;
+            responseText = `U vroeg naar "${userText}".\n\nHier is de informatie:\n${localMatch.antwoord}`;
         }
 
         // Check of er direct een mp4 in de string zit (fallback)
@@ -460,7 +475,7 @@ async function getChatbotResponse(userText, retryCount = 0) {
         
     } catch (error) {
         removeTyping();
-        appendMessage('bot', `Excuses, Holly heeft momenteel een technische storing. Probeer het later nog eens. (Fout: ${error.message})`);
+        appendMessage('bot', `Excuses, ik heb momenteel een technische storing. Probeer het later nog eens. (Fout: ${error.message})`);
     }
 }
 
