@@ -209,7 +209,10 @@ function getDynamicSystemPrompt(userQuery) {
     // 2. Thema-herhaling check (3x hetzelfde thema?)
     const themeOccurrences = themeHistory.filter(t => t === currentTheme && t !== "Algemeen/Overig").length;
     
-    const isEscalationAllowed = asksDirectlyForContact || themeOccurrences >= 3;
+    // 3. Totaal aantal vragen check (Na 3 vragen)
+    const totalQuestions = themeHistory.length; // themeHistory.length bevat ook de huidige vraag al
+    
+    const isEscalationAllowed = asksDirectlyForContact || themeOccurrences >= 3 || totalQuestions >= 3;
     
     // Verwerk ConfigData voor dynamische instructies
     for (const config of configData) {
