@@ -276,7 +276,7 @@ ${gamesKnowledge}
 function appendMessage(role, text, imagePath = null, videoPath = null, filePath = null) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}-message`;
-    const hollyAvatarPath = "holly_avatar.png";
+    const hollyAvatarPath = "Holly.jpg";
     
     // Maak links klikbaar (detecteert ook .pdf, .docx etc als ze als URL verschijnen)
     let formattedText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="chat-link">$1</a>');
@@ -342,7 +342,7 @@ function showTyping() {
     const typingDiv = document.createElement('div');
     typingDiv.className = 'message bot-message typing-indicator';
     typingDiv.id = 'typing';
-    const hollyAvatarPath = "holly_avatar.png";
+    const hollyAvatarPath = "Holly.jpg";
     typingDiv.innerHTML = `
         <div class="bot-msg-wrapper thinking-wrapper">
             <div class="mini-avatar thinking-avatar">
