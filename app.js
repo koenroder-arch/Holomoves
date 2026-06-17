@@ -14,6 +14,7 @@ let chatHistory = [];
 let userQuestionCount = 0; // Telt het aantal gestelde vragen
 let themeHistory = []; // Houdt de thema-historie bij voor escalatie-logica
 let systemPromptTemplate = ""; // Wordt geladen uit bestand
+let detectedLanguage = 'nl'; // Standaardtaal is Nederlands
 const CSV_FILE_PATH = "Vragen en antwoorden ChatBot CSV.csv";
 const BIG_DATA_FILE_PATH = "Big data vragen.csv";
 const GAMES_FILE_PATH = "Spelvragen.csv";
@@ -26,15 +27,63 @@ const SUGGESTIONS = [
     "Hoeveel ruimte heb ik nodig?"
 ];
 
-const FOLLOW_UP_MESSAGES = [
-    "Heeft u verder nog vragen?",
-    "Kan ik u ergens anders mee helpen?",
-    "Is er nog iets waarbij ik u van dienst kan zijn?",
-    "Hebt u nog andere vragen over HoloMoves?",
-    "Wilt u nog iets anders weten?",
-    "Kan ik u nog ergens bij ondersteunen?",
-    "Zijn er nog onduidelijkheden waar ik bij kan helpen?"
-];
+const FOLLOW_UP_MESSAGES = {
+    nl: [
+        "Heeft u verder nog vragen?",
+        "Kan ik u ergens anders mee helpen?",
+        "Is er nog iets waarbij ik u van dienst kan zijn?",
+        "Hebt u nog andere vragen over HoloMoves?",
+        "Wilt u nog iets anders weten?",
+        "Kan ik u nog ergens bij ondersteunen?",
+        "Zijn er nog onduidelijkheden waar ik bij kan helpen?"
+    ],
+    en: [
+        "Do you have any further questions?",
+        "Can I help you with anything else?",
+        "Is there anything else I can do for you?",
+        "Do you have other questions about HoloMoves?",
+        "Would you like to know anything else?",
+        "Can I support you with anything else?",
+        "Are there any other points I can help clarify?"
+    ],
+    de: [
+        "Haben Sie noch weitere Fragen?",
+        "Kann ich Ihnen mit etwas anderem helfen?",
+        "Gibt es noch etwas, bei dem ich Ihnen behilflich sein kann?",
+        "Haben Sie noch andere Fragen zu HoloMoves?",
+        "Möchten Sie noch etwas anderes wissen?",
+        "Kann ich Sie noch bei etwas anderem unterstützen?",
+        "Gibt es noch Unklarheiten, bei denen ich helfen kann?"
+    ]
+};
+
+// Functie om de taal te detecteren op basis van de eerste gebruikersinvoer
+function detectLanguage(text) {
+    const cleanText = text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
+    const words = cleanText.split(/\s+/);
+    
+    const enWords = new Set(['the', 'you', 'how', 'what', 'where', 'why', 'are', 'with', 'about', 'clean', 'recentering', 'need', 'have', 'can', 'please', 'help', 'hello', 'about', 'your', 'my']);
+    const deWords = new Set(['der', 'die', 'das', 'und', 'ist', 'sie', 'es', 'ich', 'wie', 'was', 'wo', 'warum', 'mit', 'uber', 'über', 'reinigen', 'zentrieren', 'brauche', 'haben', 'kann', 'bitte', 'hilfe', 'hallo', 'mein', 'dein', 'ihr']);
+    const nlWords = new Set(['de', 'het', 'een', 'en', 'is', 'ik', 'hoe', 'wat', 'waar', 'waarom', 'met', 'over', 'ruimte', 'schoonmaken', 'recentreren', 'nodig', 'hebben', 'kan', 'je', 'u', 'hulp', 'hallo', 'mijn', 'jouw', 'uw']);
+    
+    let enScore = 0;
+    let deScore = 0;
+    let nlScore = 0;
+    
+    for (const word of words) {
+        if (enWords.has(word)) enScore++;
+        if (deWords.has(word)) deScore++;
+        if (nlWords.has(word)) nlScore++;
+    }
+    
+    if (enScore > nlScore && enScore > deScore) {
+        return 'en';
+    } else if (deScore > nlScore && deScore > enScore) {
+        return 'de';
+    } else {
+        return 'nl';
+    }
+}
 
 // 2. Functie om CSV te laden en te parsen
 async function loadFAQData() {
@@ -369,7 +418,8 @@ function sendFollowUp() {
     // Alleen na de eerste 2 vragen de follow-up sturen
     if (userQuestionCount <= 2) {
         setTimeout(() => {
-            const randomMsg = FOLLOW_UP_MESSAGES[Math.floor(Math.random() * FOLLOW_UP_MESSAGES.length)];
+            const messages = FOLLOW_UP_MESSAGES[detectedLanguage] || FOLLOW_UP_MESSAGES['nl'];
+            const randomMsg = messages[Math.floor(Math.random() * messages.length)];
             appendMessage('bot', randomMsg);
         }, 1500);
     }
@@ -500,6 +550,9 @@ function renderSuggestions() {
         chip.className = 'suggestion-chip';
         chip.textContent = text;
         chip.addEventListener('click', () => {
+            if (chatHistory.length === 0) {
+                detectedLanguage = detectLanguage(text);
+            }
             appendMessage('user', text);
             suggestionContainer.classList.add('hidden');
             getChatbotResponse(text);
@@ -567,6 +620,9 @@ chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = userInput.value.trim();
     if (!text) return;
+    if (chatHistory.length === 0) {
+        detectedLanguage = detectLanguage(text);
+    }
     appendMessage('user', text);
     userInput.value = '';
     suggestionContainer.classList.add('hidden');
