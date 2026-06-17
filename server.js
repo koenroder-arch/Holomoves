@@ -54,53 +54,62 @@ http.createServer((req, res) => {
     
     // 1. Proxy voor OpenAI API
     if (req.url.startsWith('/api/chat') && req.method === 'POST') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
+        let chunks = [];
+        req.on('data', chunk => { chunks.push(chunk); });
         req.on('end', () => {
-            const clientData = JSON.parse(body);
-            
-            const options = {
-                hostname: 'api.openai.com',
-                path: '/v1/chat/completions',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${config.OPENAI_API_KEY}`
-                }
-            };
+            const body = Buffer.concat(chunks).toString('utf-8');
+            try {
+                const clientData = JSON.parse(body);
+                
+                const options = {
+                    hostname: 'api.openai.com',
+                    path: '/v1/chat/completions',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${config.OPENAI_API_KEY}`
+                    }
+                };
 
-            const proxyReq = https.request(options, (proxyRes) => {
-                let proxyData = '';
-                proxyRes.on('data', (chunk) => { proxyData += chunk; });
-                proxyRes.on('end', () => {
-                    res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
-                    res.end(proxyData);
+                const proxyReq = https.request(options, (proxyRes) => {
+                    let proxyChunks = [];
+                    proxyRes.on('data', (chunk) => { proxyChunks.push(chunk); });
+                    proxyRes.on('end', () => {
+                        const buffer = Buffer.concat(proxyChunks);
+                        res.writeHead(proxyRes.statusCode, { 'Content-Type': 'application/json' });
+                        res.end(buffer);
+                    });
                 });
-            });
 
-            proxyReq.on('error', (e) => {
-                res.writeHead(500);
-                res.end(JSON.stringify({ error: e.message }));
-            });
+                proxyReq.on('error', (e) => {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: e.message }));
+                });
 
-            // OpenAI verwacht 'messages' array in plaats van 'contents'
-            const openAiBody = {
-                model: "gpt-4o",
-                messages: clientData.messages,
-                temperature: 0.7
-            };
+                // OpenAI verwacht 'messages' array in plaats van 'contents'
+                const openAiBody = {
+                    model: "gpt-4o",
+                    messages: clientData.messages,
+                    temperature: 0.7
+                };
 
-            proxyReq.write(JSON.stringify(openAiBody));
-            proxyReq.end();
+                proxyReq.write(JSON.stringify(openAiBody));
+                proxyReq.end();
+            } catch (e) {
+                console.error("OpenAI Proxy parse error:", e.message);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON' }));
+            }
         });
         return;
     }
 
     // 2. Logging endpoint
     if (req.url === '/log' && req.method === 'POST') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
+        let chunks = [];
+        req.on('data', chunk => { chunks.push(chunk); });
         req.on('end', () => {
+            const body = Buffer.concat(chunks).toString('utf-8');
             console.log('Log body:', body);
             try {
                 const data = JSON.parse(body);

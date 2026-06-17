@@ -62,9 +62,18 @@ function detectLanguage(text) {
     const cleanText = text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"");
     const words = cleanText.split(/\s+/);
     
-    const enWords = new Set(['the', 'you', 'how', 'what', 'where', 'why', 'are', 'with', 'about', 'clean', 'recentering', 'need', 'have', 'can', 'please', 'help', 'hello', 'about', 'your', 'my']);
-    const deWords = new Set(['der', 'die', 'das', 'und', 'ist', 'sie', 'es', 'ich', 'wie', 'was', 'wo', 'warum', 'mit', 'uber', 'über', 'reinigen', 'zentrieren', 'brauche', 'haben', 'kann', 'bitte', 'hilfe', 'hallo', 'mein', 'dein', 'ihr']);
-    const nlWords = new Set(['de', 'het', 'een', 'en', 'is', 'ik', 'hoe', 'wat', 'waar', 'waarom', 'met', 'over', 'ruimte', 'schoonmaken', 'recentreren', 'nodig', 'hebben', 'kan', 'je', 'u', 'hulp', 'hallo', 'mijn', 'jouw', 'uw']);
+    const enWords = new Set([
+        'the', 'you', 'how', 'what', 'where', 'why', 'are', 'is', 'with', 'about', 'clean', 'recentering', 'need', 'have', 'can', 'please', 'help', 'hello', 'your', 'my',
+        'license', 'price', 'cost', 'costs', 'broken', 'error', 'pain', 'doctor', 'support', 'contact', 'call', 'email', 'space', 'area', 'size', 'dimension', 'dimensions'
+    ]);
+    const deWords = new Set([
+        'der', 'die', 'das', 'und', 'ist', 'sie', 'es', 'ich', 'wie', 'was', 'wo', 'warum', 'mit', 'uber', 'über', 'reinigen', 'zentrieren', 'brauche', 'haben', 'kann', 'bitte', 'hilfe', 'hallo', 'mein', 'dein', 'ihr',
+        'lizenz', 'preis', 'kosten', 'kaputt', 'fehler', 'schmerz', 'arzt', 'platz', 'raum', 'größe', 'abmessung', 'anrufen', 'telefon', 'kontakt', 'support', 'deutsch', 'deutsches'
+    ]);
+    const nlWords = new Set([
+        'de', 'het', 'een', 'en', 'is', 'ik', 'hoe', 'wat', 'waar', 'waarom', 'met', 'over', 'ruimte', 'schoonmaken', 'recentreren', 'nodig', 'hebben', 'kan', 'je', 'u', 'hulp', 'hallo', 'mijn', 'jouw', 'uw',
+        'licentie', 'prijs', 'kosten', 'kapot', 'fout', 'pijn', 'arts', 'oppervlakte', 'afmeting', 'bellen', 'telefoon', 'contact', 'ondersteuning'
+    ]);
     
     let enScore = 0;
     let deScore = 0;
@@ -196,32 +205,94 @@ function determineTheme(text) {
     const t = text.toLowerCase();
     
     // Commercieel & Kosten
-    if (t.includes("kost") || t.includes("prijs") || t.includes("licentie") || t.includes("pakket") || 
+    if (
+        // NL
+        t.includes("kost") || t.includes("prijs") || t.includes("licentie") || t.includes("pakket") || 
         t.includes("duur") || t.includes("betalen") || t.includes("geld") || t.includes("kopen") || 
-        t.includes("aanschaf") || t.includes("abonnement") || t.includes("offerte")) return "Commercieel";
+        t.includes("aanschaf") || t.includes("abonnement") || t.includes("offerte") ||
+        // EN
+        t.includes("cost") || t.includes("price") || t.includes("license") || t.includes("package") || 
+        t.includes("pay") || t.includes("money") || t.includes("buy") || t.includes("purchase") || 
+        t.includes("subscription") || t.includes("offer") || t.includes("commercial") ||
+        // DE
+        t.includes("preis") || t.includes("lizenz") || t.includes("paket") || t.includes("zahlen") || 
+        t.includes("geld") || t.includes("kaufen") || t.includes("anschaffung") || t.includes("abonnement") || 
+        t.includes("angebot")
+    ) return "Commercieel";
     
     // Ruimte & Oppervlakte
-    if (t.includes("oppervlakte") || t.includes("ruimte") || t.includes("meter") || t.includes("afmeting") || 
-        t.includes("plek") || t.includes("groot") || t.includes("vierkante")) return "Ruimte";
+    if (
+        // NL
+        t.includes("oppervlakte") || t.includes("ruimte") || t.includes("meter") || t.includes("afmeting") || 
+        t.includes("plek") || t.includes("groot") || t.includes("vierkante") ||
+        // EN
+        t.includes("area") || t.includes("space") || t.includes("meter") || t.includes("dimension") || 
+        t.includes("place") || t.includes("large") || t.includes("square") || t.includes("size") ||
+        // DE
+        t.includes("oberfläche") || t.includes("raum") || t.includes("platz") || t.includes("abmessung") || 
+        t.includes("groß") || t.includes("quadrat")
+    ) return "Ruimte";
     
     // Technisch & Support (Software/Functionaliteit)
-    if (t.includes("casten") || t.includes("wifi") || t.includes("verbinding") || t.includes("recenteren") || 
+    if (
+        // NL
+        t.includes("casten") || t.includes("wifi") || t.includes("verbinding") || t.includes("recenteren") || 
         t.includes("meta knop") || t.includes("fout") || t.includes("error") || t.includes("doet het niet") || 
-        t.includes("beeld") || t.includes("geluid") || t.includes("haperen")) return "Technisch";
+        t.includes("beeld") || t.includes("geluid") || t.includes("haperen") ||
+        // EN
+        t.includes("cast") || t.includes("wifi") || t.includes("connection") || t.includes("recenter") || 
+        t.includes("meta button") || t.includes("error") || t.includes("fault") || t.includes("bug") || 
+        t.includes("not working") || t.includes("image") || t.includes("sound") || t.includes("stutter") ||
+        // DE
+        t.includes("casten") || t.includes("wifi") || t.includes("verbindung") || t.includes("zentrieren") || 
+        t.includes("meta knopf") || t.includes("fehler") || t.includes("funktioniert nicht") || 
+        t.includes("bild") || t.includes("ton") || t.includes("ruckeln")
+    ) return "Technisch";
     
     // Hardware & Onderhoud
-    if (t.includes("schoon") || t.includes("onderhoud") || t.includes("strap") || t.includes("vizor") || 
+    if (
+        // NL
+        t.includes("schoon") || t.includes("onderhoud") || t.includes("strap") || t.includes("vizor") || 
         t.includes("hardware") || t.includes("bril") || t.includes("headset") || t.includes("quest") || 
-        t.includes("controller") || t.includes("batterij")) return "Hardware";
+        t.includes("controller") || t.includes("batterij") ||
+        // EN
+        t.includes("clean") || t.includes("maintenance") || t.includes("strap") || t.includes("visor") || 
+        t.includes("hardware") || t.includes("glasses") || t.includes("headset") || t.includes("quest") || 
+        t.includes("controller") || t.includes("battery") ||
+        // DE
+        t.includes("reinigen") || t.includes("sauber") || t.includes("wartung") || t.includes("strap") || 
+        t.includes("visier") || t.includes("hardware") || t.includes("brille") || t.includes("headset") || 
+        t.includes("quest") || t.includes("controller") || t.includes("batterie")
+    ) return "Hardware";
     
     // Medisch & Revalidatie
-    if (t.includes("pijn") || t.includes("last") || t.includes("rug") || t.includes("knie") || 
+    if (
+        // NL
+        t.includes("pijn") || t.includes("last") || t.includes("rug") || t.includes("knie") || 
         t.includes("revalidatie") || t.includes("oefening") || t.includes("therapie") || 
-        t.includes("arts") || t.includes("dokter") || t.includes("fysio") || t.includes("medisch")) return "Medisch/Fysiek";
+        t.includes("arts") || t.includes("dokter") || t.includes("fysio") || t.includes("medisch") ||
+        // EN
+        t.includes("pain") || t.includes("trouble") || t.includes("back") || t.includes("knee") || 
+        t.includes("rehabilitation") || t.includes("exercise") || t.includes("therapy") || 
+        t.includes("doctor") || t.includes("physio") || t.includes("medical") ||
+        // DE
+        t.includes("schmerz") || t.includes("beschwerden") || t.includes("rücken") || t.includes("knie") || 
+        t.includes("rehabilitation") || t.includes("übung") || t.includes("therapie") || 
+        t.includes("arzt") || t.includes("physio") || t.includes("medizinisch")
+    ) return "Medisch/Fysiek";
 
     // Bedrijfsinformatie
-    if (t.includes("missie") || t.includes("visie") || t.includes("wat is") || t.includes("wie") || 
-        t.includes("waarom") || t.includes("holomoves")) return "Bedrijfsinformatie";
+    if (
+        // NL
+        t.includes("missie") || t.includes("visie") || t.includes("wat is") || t.includes("wie") || 
+        t.includes("waarom") || t.includes("holomoves") ||
+        // EN
+        t.includes("mission") || t.includes("vision") || t.includes("what is") || t.includes("who") || 
+        t.includes("why") ||
+        // DE
+        t.includes("mission") || t.includes("vision") || t.includes("was ist") || t.includes("wer") || 
+        t.includes("warum")
+    ) return "Bedrijfsinformatie";
 
     return "Algemeen/Overig";
 }
@@ -253,7 +324,21 @@ function getDynamicSystemPrompt(userQuery) {
                                    qLower.includes("bellen") || 
                                    qLower.includes("mail") || 
                                    qLower.includes("spreken") || 
-                                   qLower.includes("hulp nodig van een mens");
+                                   qLower.includes("hulp nodig van een mens") ||
+                                   // English
+                                   qLower.includes("phone") ||
+                                   qLower.includes("call") ||
+                                   qLower.includes("email") ||
+                                   qLower.includes("speak") ||
+                                   qLower.includes("human help") ||
+                                   qLower.includes("support") ||
+                                   // German
+                                   qLower.includes("telefon") ||
+                                   qLower.includes("anrufen") ||
+                                   qLower.includes("email") ||
+                                   qLower.includes("sprechen") ||
+                                   qLower.includes("menschliche hilfe") ||
+                                   qLower.includes("kontakt");
 
     // 2. Thema-herhaling check (3x hetzelfde thema?)
     const themeOccurrences = themeHistory.filter(t => t === currentTheme && t !== "Algemeen/Overig").length;
@@ -272,7 +357,8 @@ function getDynamicSystemPrompt(userQuery) {
         } else if (config.Type === 'RAG Classificatie') {
             // Controleer op trefwoorden
             let keywordsText = config['Regel / Logica'].toLowerCase().replace('trefwoorden:', '').trim();
-            let keywords = keywordsText.split(/[\s,]+/).filter(k => k.length > 2);
+            // Split by comma first to allow multi-word phrases, and trim each keyword
+            let keywords = keywordsText.split(',').map(k => k.trim()).filter(k => k.length > 2);
             let hasMatch = keywords.some(kw => qLower.includes(kw));
             if (hasMatch) {
                 if (isEscalationAllowed) {
@@ -437,7 +523,17 @@ async function getChatbotResponse(userText, retryCount = 0) {
 
     const isAreaQuery = userText.toLowerCase().includes("oppervlakte") || 
                         userText.toLowerCase().includes("ruimte") || 
-                        userText.toLowerCase().includes("afmeting");
+                        userText.toLowerCase().includes("afmeting") ||
+                        // English
+                        userText.toLowerCase().includes("area") || 
+                        userText.toLowerCase().includes("space") || 
+                        userText.toLowerCase().includes("dimension") ||
+                        userText.toLowerCase().includes("size") ||
+                        // German
+                        userText.toLowerCase().includes("raum") || 
+                        userText.toLowerCase().includes("platz") || 
+                        userText.toLowerCase().includes("abmessung") ||
+                        userText.toLowerCase().includes("größe");
     const areaImagePath = "Screenshot 2026-04-22 124526.jpg";
 
     // STAP 1: Lokale match in CSV (Sla over als de vraag al eerder gesteld is om AI-nuance te geven)
@@ -505,7 +601,16 @@ async function getChatbotResponse(userText, retryCount = 0) {
         const botResponse = data.choices[0].message.content;
         
         removeTyping();
-        const isResponseAboutArea = botResponse.toLowerCase().includes("oppervlakte") || isAreaQuery;
+        const isResponseAboutArea = botResponse.toLowerCase().includes("oppervlakte") || 
+                                    botResponse.toLowerCase().includes("ruimte") || 
+                                    botResponse.toLowerCase().includes("afmeting") || 
+                                    botResponse.toLowerCase().includes("area") || 
+                                    botResponse.toLowerCase().includes("space") || 
+                                    botResponse.toLowerCase().includes("dimension") || 
+                                    botResponse.toLowerCase().includes("size") || 
+                                    botResponse.toLowerCase().includes("platz") || 
+                                    botResponse.toLowerCase().includes("abmessung") || 
+                                    isAreaQuery;
         
         let videoFile = null;
         let otherFile = null;
